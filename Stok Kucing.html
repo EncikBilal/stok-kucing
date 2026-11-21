@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stok Kucing</title>
+<style>
+:root{--bg:#eef3ee;--card:#fff;--ink:#1f2a24;--mute:#66736b;--line:#d5ded6;--ok:#2f7d4f;--warn:#b36b00;--bad:#c0392b;--btn:#2f5d46;--btntx:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141b17;--card:#1d2722;--ink:#e8efe9;--mute:#93a299;--line:#2d3b33;--ok:#5fc08a;--warn:#e3a83a;--bad:#ef7a6c;--btn:#5fc08a;--btntx:#10201a}}
+:root[data-theme="dark"]{--bg:#141b17;--card:#1d2722;--ink:#e8efe9;--mute:#93a299;--line:#2d3b33;--ok:#5fc08a;--warn:#e3a83a;--bad:#ef7a6c;--btn:#5fc08a;--btntx:#10201a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;line-height:1.45}
+main{max-width:520px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:4px 0 2px}
+.sub{color:var(--mute);font-size:.9rem;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.alert{border-radius:12px;padding:10px 14px;margin-bottom:12px;background:var(--card);border:2px solid var(--warn);color:var(--warn);font-weight:700}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.name{font-weight:700;font-size:1.05rem}
+.stat{font-size:.85rem;font-weight:700}
+.stat.ok{color:var(--ok)}.stat.warn{color:var(--warn)}.stat.bad{color:var(--bad)}
+.qty{font-size:2.4rem;font-weight:800;margin:4px 0}
+.qty small{font-size:.9rem;font-weight:400;color:var(--mute)}
+.est{color:var(--mute);font-size:.88rem;margin-bottom:10px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:10px 14px;min-height:44px;cursor:pointer}
+button.main{background:var(--btn);color:var(--btntx);border-color:var(--btn);font-weight:700}
+button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid var(--warn);outline-offset:2px}
+input{font:inherit;min-height:44px;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--bg);color:var(--ink)}
+input[type=number]{width:72px}
+input.txt{width:100%}
+details{margin-top:10px}
+summary{cursor:pointer;color:var(--mute);font-size:.88rem;padding:4px 0}
+.log{list-style:none;margin:8px 0 0;padding:0;font-size:.88rem;max-height:200px;overflow-y:auto}
+.log li{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line)}
+.log .p{color:var(--ok)}.log .m{color:var(--bad)}
+.set{display:grid;gap:10px;font-size:.88rem;color:var(--mute);margin-top:8px}
+.set label{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+textarea{width:100%;min-height:200px;font:.85rem/1.4 ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);color:var(--ink)}
+.toast{color:var(--ok);font-size:.9rem;min-height:1.3em;margin:8px 0}
+.note{color:var(--mute);font-size:.8rem;margin-top:14px}
+.err{color:var(--bad);font-weight:700}
+</style>
+</head>
+<body>
+<main>
+<h1>Stok kucing</h1>
+<div class="sub" id="today"></div>
+<div id="alert"></div>
+<div id="items"></div>
+
+<div class="card">
+<div class="name">Tambah item baru</div>
+<div class="set">
+<label>Nama <input class="txt" id="an" placeholder="Contoh: Ubat cacing"></label>
+<label>Baki <input type="number" min="0" value="0" id="aq"> Unit <input id="au" value="pek" style="width:90px"></label>
+<label>Beli bila ≤ <input type="number" min="0" value="1" id="am"></label>
+</div>
+<div class="row" style="margin-top:10px"><button class="main" id="add">Tambah item</button></div>
+</div>
+
+<div class="card">
+<div class="name">Salin ke WhatsApp</div>
+<div class="est">Hantar ringkasan ke chat sendiri sebagai sandaran.</div>
+<div class="row"><button class="main" id="copy">Salin ringkasan</button></div>
+<details><summary>Papar teks ringkasan</summary><textarea id="out" readonly></textarea></details>
+</div>
+
+<div class="card">
+<div class="name">Sandaran dan pulihkan</div>
+<div class="est">Simpan kod sandaran dalam WhatsApp. Tampal semula bila tukar telefon.</div>
+<textarea id="imp" style="min-height:80px" placeholder="Kod sandaran"></textarea>
+<div class="row" style="margin-top:8px"><button id="showbk">Papar kod sandaran</button><button id="doimp">Pulihkan</button></div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+<div id="warnsave"></div>
+<p class="note">Data disimpan dalam pelayar telefon ini sahaja. Jika data pelayar dipadam atau guna telefon lain, data hilang. Salin ringkasan dan kod sandaran sekali-sekala.</p>
+</main>
+
+<script>
+const KEY="stok-kucing-v1";
+let S,canSave=true,openK=new Set(),delId=null;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const today=()=>{const d=new Date();return d.getDate()+"/"+(d.getMonth()+1)};
+function parseD(s){const[a,b]=s.split("/").map(Number);const n=new Date();let d=new Date(n.getFullYear(),b-1,a,12);if(d>n)d.setFullYear(d.getFullYear()-1);return d}
+const hist=l=>l.map(s=>({d:s,t:parseD(s).getTime(),n:-1,h:1}));
+const SEED={
+ bg:["2/10","5/10","8/10","20/10","23/10","26/10","30/10","2/11","5/11","8/11","11/11","14/11","17/11"],
+ lt:["21/10","1/11","11/11","20/11"]};
+const DEFAULT=()=>({items:[
+ {id:"bg",name:"Makanan Boy & Geng",unit:"pek",qty:5,min:2,log:[]},
+ {id:"lt",name:"Makanan Luna & Tomok",unit:"pek",qty:2,min:1,log:[]},
+ {id:"ps",name:"Pasir / bekas taik",unit:"pek",qty:13,min:4,log:[]}]});
+function load(){
+ try{const r=localStorage.getItem(KEY);if(r)S=JSON.parse(r)}catch(e){}
+ if(!S||!Array.isArray(S.items))S=DEFAULT();
+ if(!S.seeded){S.items.forEach(it=>{if(SEED[it.id]&&!it.log.length)it.log=hist(SEED[it.id])});S.seeded=1}
+ save()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){canSave=false}}
+function say(m,bad){const t=document.getElementById("toast");t.textContent=m;t.className="toast"+(bad?" err":"")}
+function rate(it){
+ const now=Date.now(),u=it.log.filter(l=>l.n<0&&!l.c&&now-l.t<=45*864e5);
+ if(u.length<2)return null;
+ const first=Math.min(...u.map(l=>l.t));
+ const days=Math.max(7,(now-first)/864e5);
+ return u.reduce((a,l)=>a-l.n,0)/days}
+function status(it){
+ const r=rate(it),days=r?Math.floor(it.qty/r):null;
+ let cls="ok",t="Cukup";
+ if(it.qty<=0){cls="bad";t="Habis!"}else if(it.qty<=it.min){cls="warn";t="Hampir habis, beli"}
+ return{cls,t,days}}
+function fmtDate(days){const d=new Date(Date.now()+days*864e5);return d.getDate()+"/"+(d.getMonth()+1)}
+function render(){
+ document.getElementById("today").textContent="Kemas kini terakhir: "+(S.updated||"belum ada");
+ const low=S.items.filter(i=>status(i).cls!=="ok").map(i=>i.name);
+ document.getElementById("alert").innerHTML=low.length?`<div class="alert">⚠️ Perlu beli: ${low.map(esc).join(", ")}</div>`:"";
+ document.getElementById("warnsave").innerHTML=canSave?"":`<p class="err">Pelayar ini tak benarkan simpanan. Data akan hilang bila halaman ditutup. Cuba buka di Chrome atau Safari biasa, bukan mod peribadi.</p>`;
+ const box=document.getElementById("items");box.innerHTML="";
+ S.items.forEach(it=>{
+  const st=status(it),o=k=>openK.has(k+it.id)?"open":"";
+  const est=st.days===null?"Anggaran hari habis: belum cukup data":st.days===0?"Anggaran habis: hari ini":"Anggaran habis: lebih kurang "+fmtDate(st.days)+" ("+st.days+" hari lagi)";
+  const log=it.log.slice().reverse().map(l=>`<li><span>${l.d}${l.c?" (betulkan)":""}</span><span class="${l.n>0?"p":"m"}">${l.n>0?"+":""}${l.n}</span></li>`).join("")||"<li>Tiada rekod lagi</li>";
+  const c=document.createElement("div");c.className="card";
+  c.innerHTML=`<div class="top"><span class="name">${esc(it.name)}</span><span class="stat ${st.cls}">${st.t}</span></div>
+  <div class="qty">${it.qty} <small>${esc(it.unit)}</small></div><div class="est">${est}</div>
+  <div class="row"><button data-a="use" data-id="${it.id}">− Guna 1</button>
+  <input type="number" min="1" value="1" aria-label="Bilangan beli" id="n-${it.id}">
+  <button class="main" data-a="buy" data-id="${it.id}">+ Beli</button>
+  <button data-a="undo" data-id="${it.id}">Batal terakhir</button></div>
+  <details data-k="h${it.id}" ${o("h")}><summary>Sejarah (${it.log.length})</summary><ul class="log">${log}</ul></details>
+  <details data-k="s${it.id}" ${o("s")}><summary>Tetapan</summary><div class="set">
+   <label>Nama <input class="txt" data-a="name" data-id="${it.id}" value="${esc(it.name)}"></label>
+   <label>Beli bila ≤ <input type="number" min="0" data-a="min" data-id="${it.id}" value="${it.min}"></label>
+   <label>Betulkan baki <input type="number" min="0" id="b-${it.id}" value="${it.qty}"><button data-a="setqty" data-id="${it.id}">Simpan</button></label>
+   <div><button data-a="del" data-id="${it.id}">${delId===it.id?"Tekan lagi untuk padam":"Padam item"}</button></div></div></details>`;
+  box.appendChild(c)});
+ document.getElementById("out").value=summary()}
+function summary(){
+ let s="📦 STOK KUCING | Kemas kini: "+(S.updated||today())+"\n══════════════\n";
+ S.items.forEach(it=>{const st=status(it);
+  s+=(st.cls==="ok"?"✅ ":"⚠️ ")+it.name+"\nBaki: "+it.qty+" "+it.unit+(st.days!==null?" | habis ±"+fmtDate(st.days):"")+"\n";
+  const r=it.log.slice(-6).map(l=>(l.n>0?"+":"")+l.n+" ("+l.d+")").join(", ");
+  if(r)s+="Log: "+r+"\n";s+="\n"});
+ return s.trim()}
+const find=id=>S.items.find(i=>i.id===id);
+function add(it,n,c){it.qty=Math.max(0,it.qty+n);const l={d:today(),t:Date.now(),n};if(c)l.c=1;it.log.push(l);if(it.log.length>200)it.log.shift();S.updated=today()}
+document.addEventListener("toggle",e=>{const k=e.target.dataset&&e.target.dataset.k;if(k){e.target.open?openK.add(k):openK.delete(k)}},true);
+document.addEventListener("click",e=>{
+ const b=e.target.closest("button");if(!b)return;
+ const a=b.dataset.a,id=b.dataset.id,it=id&&find(id);
+ if(a!=="del")delId=null;
+ if(a==="use"){if(it.qty>0){add(it,-1);save();render()}}
+ else if(a==="buy"){const n=parseInt(document.getElementById("n-"+id).value,10);if(n>0){add(it,n);save();render()}}
+ else if(a==="undo"){const l=it.log.pop();if(l){if(!l.h)it.qty=Math.max(0,it.qty-l.n);save();render()}}
+ else if(a==="setqty"){const v=parseInt(document.getElementById("b-"+id).value,10);if(v>=0&&v!==it.qty){add(it,v-it.qty,1);save();render();say("Baki dikemas kini.")}}
+ else if(a==="del"){if(delId===id){S.items=S.items.filter(i=>i.id!==id);delId=null;save()}else delId=id;render()}
+ else if(b.id==="add"){const n=document.getElementById("an").value.trim();if(!n){say("Isi nama item dahulu.",1);return}
+  S.items.push({id:"i"+Date.now(),name:n.slice(0,60),unit:(document.getElementById("au").value.trim()||"pek").slice(0,12),qty:Math.max(0,parseInt(document.getElementById("aq").value,10)||0),min:Math.max(0,parseInt(document.getElementById("am").value,10)||0),log:[]});
+  document.getElementById("an").value="";save();render();say("Item ditambah.")}
+ else if(b.id==="copy"){const t=summary(),ta=document.getElementById("out");ta.value=t;
+  const done=ok=>say(ok?"Disalin. Tampal dalam WhatsApp.":"Tak boleh salin automatik. Buka ‘Papar teks ringkasan’ dan salin manual.",!ok);
+  try{navigator.clipboard.writeText(t).then(()=>done(true),()=>{ta.select();try{done(document.execCommand("copy"))}catch(x){done(false)}})}catch(x){done(false)}}
+ else if(b.id==="showbk"){document.getElementById("imp").value=JSON.stringify(S);say("Salin kod di atas dan simpan dalam WhatsApp.")}
+ else if(b.id==="doimp"){try{const o=JSON.parse(document.getElementById("imp").value);
+  if(!o||!Array.isArray(o.items)||!o.items.every(i=>i&&typeof i.id==="string"&&typeof i.name==="string"&&Number.isFinite(i.qty)&&Array.isArray(i.log)))throw 0;
+  o.items.forEach(i=>{i.min=Number.isFinite(i.min)?i.min:1;i.unit=i.unit||"pek"});
+  S=o;S.seeded=1;save();render();say("Data dipulihkan.")}catch(x){say("Kod sandaran tidak sah.",1)}}
+});
+document.addEventListener("change",e=>{const t=e.target,it=t.dataset.id&&find(t.dataset.id);if(!it)return;
+ if(t.dataset.a==="min"){it.min=Math.max(0,parseInt(t.value,10)||0);save();render()}
+ else if(t.dataset.a==="name"){const v=t.value.trim();if(v){it.name=v.slice(0,60);save();render()}}});
+load();render();
+</script>
+</body>
+</html>
